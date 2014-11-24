@@ -1,0 +1,101 @@
+---
+- hosts: test
+  remote_user: root
+  gather_facts: True
+  vars:
+   mysql_user: mysql
+
+  tasks:
+    - name: yum epel repo
+      yum: name=http://download.fedoraproject.org/pub/epel/6/x86_64/epel-release-6-8.noarch.rpm  state=present
+
+    - name: Install initializtion require software
+      yum: name={{item}} enablerepo='epel' disablerepo='local' state=present disable_gpg_check=yes
+      poll: 0
+      with_items:
+      - make
+      - cmake
+      - bc
+      - gcc
+      - gcc-c++
+      - autoconf
+      - libjpeg
+      - libjpeg-devel
+      - libpng
+      - libpng-devel
+      - freetype
+      - freetype-devel
+      - libxml2
+      - libxml2-devel
+      - zlib
+      - zlib-devel
+      - glibc
+      - glibc-devel
+      - glib2
+      - glib2-devel
+      - bzip2
+      - bzip2-devel
+      - ncurses
+      - ncurses-devel
+      - curl
+      - curl-devel
+      - e2fsprogs
+      - e2fsprogs-devel
+      - krb5-devel
+      - libidn
+      - libidn-devel
+      - openssl
+      - openssl-devel
+      - openldap
+      - openldap-devel
+      - openldap-clients
+      - openldap-servers
+      - libxslt-devel
+      - libevent-devel
+      - ntp
+      - libtool-ltdl
+      - bison
+      - libtool
+      - vim-enhanced
+      - tar
+      - wget
+      - readline-devel
+      - libyaml-devel
+      - patch
+      - telnet
+      - dmidecode
+      - ftp
+
+    - name: Create Mysql User In Redhat Client
+      user: name={{ mysql_user }} state=present createhome=no shell=/sbin/nologin
+      when: ansible_os_family == "RedHat" and ansible_distribution_version|int >=6 and ansible_distribution_version|int >=6
+
+    - name: Copy Mysql Software To Redhat Client
+      get_url: url=ftp://liushuang:liushuang123A23@172.17.1.15/mysql/mysql.tar.gz dest=/opt
+
+    - name: Uncompression Mysql Software To Redhat Client
+      shell: tar zxf /opt/mysql.tar.gz -C /usr/local
+      when: ansible_os_family == "RedHat" and ansible_distribution_version|int >=6
+
+    - name: Modify Mysql Dir Permission In Redhat Client
+      file: path=/usr/local/mysql owner={{ mysql_user }} group={{ mysql_user }} mode=0755
+      when: ansible_os_family == "RedHat" and ansible_distribution_version|int >=6
+
+    - name: Init Mysql Db
+      shell: /usr/local/mysql/basedir/scripts/mysql_install_db --defaults-file=/usr/local/mysql/datadir/my.cnf --basedir=/usr/local/mysql/basedir  --datadir=/usr/local/mysql/datadir --user=mysql
+      when: ansible_os_family == "RedHat" and ansible_distribution_version|int >=6
+
+    - name: Get Service
+      get_url: url=ftp://liushuang:liushuang123A23@172.17.1.15/mysql/mysqld dest=/etc/init.d
+
+    - name: Add Service 
+      shell: 'chmod +x /etc/init.d/mysqld && chkconfig --add mysqld'
+      notify:
+        - Restart Mysql
+
+    - name: Ln client
+      shell: ln -s /usr/local/mysql/basedir/bin/mysql /usr/bin/mysql && ln -s /usr/local/mysql/basedir/bin/mysql_config /usr/bin/mysql_config && ln -s /usr/local/mysql/datadir/mysql.sock /tmp/mysql.sock
+
+  handlers:
+    - name: Restart Mysql
+      service: name=mysqld state=restarted

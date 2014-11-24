@@ -85,7 +85,7 @@
     - name: copy tengine
       get_url: url=ftp://liushuang:liushuang123A23@172.17.1.15/tengine/tengine-{{ tengine_version }}.tar.gz dest=/opt
 
-######Uncompression 
+#####Uncompression 
     - name: Uncompression ngx_cache_purge Redhat Client
       shell: tar zxf /opt/ngx_cache_purge-{{ ngx_cache_purge_version }}.tar.gz -C /opt/src/
       when: ansible_os_family == "RedHat" and ansible_distribution_version|int >=6
@@ -98,11 +98,23 @@
       shell: tar zxf /opt/tengine-{{ tengine_version }}.tar.gz -C /opt/src/
       when: ansible_os_family == "RedHat" and ansible_distribution_version|int >=6
 
-######Create Nginx User
+#####Create Nginx User
     - name: Create Nginx User In Redhat Client
       user: name={{ nginx_user }} state=present createhome=no shell=/sbin/nologin
       when: ansible_os_family == "RedHat" and ansible_distribution_version|int >=6
 
-######Install Nginx
+#####Install Nginx
     - name: Install Nginx In Redhat Client
       shell: cd /opt/src/tengine-{{ tengine_version }} && ./configure {{nginx_source_configure_flags}} && make && make install
+
+#####Add Service
+    - name: get service
+      get_url: url=ftp://liushuang:liushuang123A23@172.17.1.15/tengine/nginx dest=/etc/init.d
+
+    - name: add service 
+      shell: 'chmod +x /etc/init.d/nginx && chkconfig --add nginx'
+      notify:
+        - restart nginx
+  handlers:
+    - name: restart nginx
+      service: name=nginx state=restarted

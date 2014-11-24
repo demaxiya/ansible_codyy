@@ -1,0 +1,29 @@
+---
+- hosts: localhost
+  remote_user: root
+
+  tasks: 
+    - name: Install the libselinux-python package  # because ansible needs it
+      yum: name=libselinux-python state=present
+#      when: ansible_distribution == 'CentOS' or ansible_distribution == 'Red Hat Enterprise Linux'
+
+    - name: Install FTP client
+      yum: name=ftp state=present
+
+    - name: copy file
+      get_url: url=ftp://liushuang:liushuang123A23@172.17.1.15/java/jdk-7u45-linux-x64.tar.gz dest=/opt 
+    
+    - name: tar files
+      shell: 'tar -zxvf /opt/jdk-7u45-linux-x64.tar.gz -C /usr/local'
+#      notify: 
+#        - tar files
+    
+    - name: Set JAVA_HOME environment variable
+      lineinfile: dest='/etc/profile' line="export JAVA_HOME=/usr/local/jdk1.7.0_45 \nexport PATH=$JAVA_HOME/bin:$PATH \nexport CLASSPATH=
+.:$JAVA_HOME/lib/dt.jar:$JAVA_HOME/lib/tools.jar"
+    
+    - name: Source profile
+      shell: 'source /etc/profile'
+#  handlers: 
+#        - name: tar files
+#          shell: 'tar -zxvf /opt/jdk-7u45-linux-x64.tar.gz -C /usr/local'

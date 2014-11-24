@@ -1,0 +1,22 @@
+---
+- hosts: localhost
+  remote_user: root
+
+  tasks: 
+###########Install tomcat7##########
+    - name: get tomcat
+      get_url: url=ftp://liushuang:liushuang123A23@172.17.1.15/tomcat/apache-tomcat-7.0.57.tar.gz dest=/opt 
+
+    - name: tar tomcat
+      shell: 'tar -zxvf /opt/apache-tomcat-7.0.57.tar.gz -C /usr/local'
+
+    - name: get service
+      get_url: url=ftp://liushuang:liushuang123A23@172.17.1.15/tomcat/tomcat dest=/etc/init.d
+
+    - name: add service 
+      shell: 'chmod +x /etc/init.d/tomcat && chkconfig --add tomcat'
+      notify:
+        - restart tomcat
+  handlers:
+    - name: restart tomcat
+      service: name=tomcat state=restarted

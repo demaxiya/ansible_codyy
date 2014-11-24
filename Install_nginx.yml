@@ -1,0 +1,108 @@
+---
+- hosts: test
+  remote_user: root
+  gather_facts: True
+  vars:
+   pcre_version: 8.34
+   ngx_cache_purge_version: 2.1
+   tengine_version: 2.0.3
+   nginx_user: www
+   nginx_source_configure_flags: --prefix=/usr/local/nginx --add-module=/opt/src/ngx_cache_purge-2.1/  --with-http_stub_status_module  --with-pcre=/opt/src/pcre-8.34 --user=www --group=www
+
+  tasks: 
+    - name: yum epel repo
+      yum: name=http://download.fedoraproject.org/pub/epel/6/x86_64/epel-release-6-8.noarch.rpm  state=present
+
+    - name: Install initializtion require software
+      yum: name={{item}} enablerepo='epel' state=present disable_gpg_check=yes
+      poll: 0
+      with_items:
+      - make
+      - cmake
+      - bc
+      - gcc
+      - gcc-c++
+      - autoconf
+      - libjpeg
+      - libjpeg-devel
+      - libpng
+      - libpng-devel
+      - freetype
+      - freetype-devel
+      - libxml2
+      - libxml2-devel
+      - zlib
+      - zlib-devel
+      - glibc
+      - glibc-devel
+      - glib2
+      - glib2-devel
+      - bzip2
+      - bzip2-devel
+      - ncurses
+      - ncurses-devel
+      - curl
+      - curl-devel
+      - e2fsprogs
+      - e2fsprogs-devel
+      - krb5-devel
+      - libidn
+      - libidn-devel
+      - openssl
+      - openssl-devel
+      - openldap
+      - openldap-devel
+      - openldap-clients
+      - openldap-servers
+      - libxslt-devel
+      - libevent-devel
+      - ntp
+      - libtool-ltdl
+      - bison
+      - libtool
+      - vim-enhanced
+      - tar
+      - wget
+      - readline-devel
+      - libyaml-devel
+      - patch
+      - telnet
+      - dmidecode
+      - libselinux-python
+      - lrzsz
+      - bind-utils
+      - dos2unix
+      - sysstat
+      - iptraf
+      - ftp
+
+    - name: copy ngx_cache_purge
+      get_url: url=ftp://liushuang:liushuang123A23@172.17.1.15/tengine/ngx_cache_purge-{{ ngx_cache_purge_version }}.tar.gz dest=/opt
+
+    - name: copy pcre
+      get_url: url=ftp://liushuang:liushuang123A23@172.17.1.15/tengine/pcre-{{ pcre_version }}.tar.gz dest=/opt
+
+    - name: copy tengine
+      get_url: url=ftp://liushuang:liushuang123A23@172.17.1.15/tengine/tengine-{{ tengine_version }}.tar.gz dest=/opt
+
+######Uncompression 
+    - name: Uncompression ngx_cache_purge Redhat Client
+      shell: tar zxf /opt/ngx_cache_purge-{{ ngx_cache_purge_version }}.tar.gz -C /opt/src/
+      when: ansible_os_family == "RedHat" and ansible_distribution_version|int >=6
+
+    - name: Uncompression pcre In Redhat Client
+      shell: tar zxf /opt/pcre-{{ pcre_version }}.tar.gz -C /opt/src/
+      when: ansible_os_family == "RedHat" and ansible_distribution_version|int >=6
+
+    - name: Uncompression tengine In Redhat Client
+      shell: tar zxf /opt/tengine-{{ tengine_version }}.tar.gz -C /opt/src/
+      when: ansible_os_family == "RedHat" and ansible_distribution_version|int >=6
+
+######Create Nginx User
+    - name: Create Nginx User In Redhat Client
+      user: name={{ nginx_user }} state=present createhome=no shell=/sbin/nologin
+      when: ansible_os_family == "RedHat" and ansible_distribution_version|int >=6
+
+######Install Nginx
+    - name: Install Nginx In Redhat Client
+      shell: cd /opt/src/tengine-{{ tengine_version }} && ./configure {{nginx_source_configure_flags}} && make && make install

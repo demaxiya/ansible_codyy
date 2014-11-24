@@ -1,0 +1,46 @@
+---
+- hosts: test
+  remote_user: root
+
+  tasks: 
+    - name: yum remi repo
+      yum: name=http://rpms.famillecollet.com/enterprise/remi-release-6.rpm  state=present
+
+    - name: yum epel repo
+      yum: name=http://download.fedoraproject.org/pub/epel/6/x86_64/epel-release-6-8.noarch.rpm  state=present
+
+    - name: edit repo
+      lineinfile: dest=/etc/yum.repos.d/remi.repo regexp='enabled=0' line='enabled=1' state=present
+
+    - name: install php_lib
+      yum: name={{item}} enablerepo='epel' state=present disable_gpg_check=yes
+      with_items:
+      - libmcrypt
+      - libmcrypt-devel
+
+    - name: install php
+      yum: name={{item}} enablerepo='remi,remi-php55' disablerepo='local' state=present disable_gpg_check=yes
+      with_items:
+      - php-xml
+      - php-common
+      - php-pecl-jsonc
+      - php-devel
+      - php-pdo
+      - php-mcrypt
+      - php-fpm
+      - php-pecl-memcache
+      - php-gd
+      - php-pecl-igbinary
+      - php-process
+      - php-cli
+      - php-pear
+      - php-pecl-zip
+      - php-pecl-jsonc-devel
+      - php-mysqlnd
+      - php-mbstring
+      - php-pecl-msgpack
+      - php-pecl-memcached
+      - php-pecl-redis
+
+    - name: reloaded php-fpm
+      service: name=php-fpm state=reloaded enabled=yes runlevel=2,3,4,5

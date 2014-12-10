@@ -13,8 +13,11 @@
     - name: get service
       get_url: url=ftp://liushuang:liushuang123A23@172.17.1.15/tomcat/tomcat dest=/etc/init.d
 
+    - name: yum dos2unix
+      yum: name=dos2unix state=present
+
     - name: add service 
-      shell: 'chmod +x /etc/init.d/tomcat && chkconfig --add tomcat'
+      shell: 'dos2unix /etc/init.d/tomcat && chmod +x /etc/init.d/tomcat && chkconfig --add tomcat'
       notify:
         - restart tomcat
   handlers:
